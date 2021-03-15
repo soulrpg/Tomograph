@@ -89,7 +89,7 @@ class GUI:
         
     def start_clicked(self):
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
-            self.logic.start_transform(ITER_NUM, int(self.stepEntry.get()), int(self.detectorsEntry.get()), int(self.range_spanEntry.get()), self.checkbutton_value)
+            self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value)
         
         #self.slider.destroy()
         #self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  

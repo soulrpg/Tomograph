@@ -55,8 +55,35 @@ class Logic:
                 else:
                     break
         cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        
+        # Odwrotna transformacja
+        self.angle = 0
+        self.value_array = []
+        for i in range(self.image.shape[0]):
+            self.value_array.append([])
+            for j in range(self.image.shape[1]):
+                self.value_array[i].append(0)
+        for i in range(self.iters):
+            self.set_positions()
+            for j in range(detectors_num):
+                path = self.bresenham_line(copy.copy(self.emiter_pos), copy.copy(self.detectors_pos[j]))
+                for coord in path:
+                    self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinogram[i][j]
+        max_value = 0
+        for line in self.value_array:
+            if max(line) > max_value:
+                max_value = max(line)
+        for line in self.value_array:
+            for i in range(len(line)):
+                if max_value != 0:
+                    line[i] = line[i]/max_value * 255
+                else:
+                    break
+        cv2.imshow('Odwrotna transformacja', np.array(self.value_array, dtype=np.uint8))
         cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows()        
     
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
