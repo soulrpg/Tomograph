@@ -71,6 +71,8 @@ class Logic:
                 path = self.bresenham_line(copy.copy(self.emiter_pos), copy.copy(self.detectors_pos[j]))
                 for coord in path:
                     self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinogram[i][j]
+                    #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255
+            self.angle += self.step
         max_value = 0
         for line in self.value_array:
             if max(line) > max_value:
@@ -78,7 +80,8 @@ class Logic:
         for line in self.value_array:
             for i in range(len(line)):
                 if max_value != 0:
-                    line[i] = line[i]/max_value * 255
+                    line[i] = line[i]/max_value*255
+                    #print(line[i])
                 else:
                     break
         cv2.imshow('Odwrotna transformacja', np.array(self.value_array, dtype=np.uint8))
