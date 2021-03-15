@@ -5,7 +5,7 @@ from tkinter import messagebox
 import os
 from logic import *
 
-ITER_NUM = 1
+ITER_NUM = 180
 
 class GUI:
     def __init__(self, title, WIDTH, HEIGHT, RESIZABLE):
@@ -50,18 +50,21 @@ class GUI:
         self.step.pack(side=tk.LEFT)
         
         self.stepEntry = ttk.Entry(self.top_menu_2, width = 5)
+        self.stepEntry.insert(0, "2");
         self.stepEntry.pack(side = tk.LEFT)
         
         self.detectors = ttk.Label(self.top_menu_2, text="Liczba detektorów:")
         self.detectors.pack(side=tk.LEFT, padx=10)
         
         self.detectorsEntry = ttk.Entry(self.top_menu_2, width = 5)
+        self.detectorsEntry.insert(0, "3")
         self.detectorsEntry.pack(side = tk.LEFT)
         
         self.range_span = ttk.Label(self.top_menu_2, text="Rozpiętość:")
         self.range_span.pack(side=tk.LEFT, padx=10)
         
         self.range_spanEntry = ttk.Entry(self.top_menu_2, width = 5)
+        self.range_spanEntry.insert(0, "180");
         self.range_spanEntry.pack(side = tk.LEFT)
         
         self.checkbutton = ttk.Checkbutton(self.top_menu_2, text="Filtr splotu", offvalue = 0, onvalue = 1, command=lambda: self.                     checkbutton_change(), variable = self.checkbutton_value) 
