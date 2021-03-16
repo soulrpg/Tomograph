@@ -13,7 +13,8 @@ class Logic:
         self.detectors_pos = []
         self.sinogram = []
         self.brehensam_path = []
-        
+        self.sinogram_filtered = []
+
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
         self.iters = math.ceil(360/step)
@@ -53,17 +54,18 @@ class Logic:
             if max(line) > max_value:
                 max_value = max(line)
         for line in self.sinogram:
-            print(line)
+            #print(line)
             for i in range(len(line)):
                 if max_value != 0:
                     line[i] = line[i]/max_value * 255
                 else:
                     break
-        self.sinogram_filtered = []
-        for line in self.sinogram:
-            self.sinogram_filtered.append(self.convolution(line))
+
         if self.filter:
-            cv2.imshow('Sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
+            self.sinogram_filtered = []
+            for line in self.sinogram:
+                self.sinogram_filtered.append(self.convolution(line))
+            cv2.imshow('FIltered sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
         else:
             cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
         #cv2.waitKey(0)
@@ -71,14 +73,14 @@ class Logic:
         self.inverse_radeon_transform()
         
     
-    def convolution(self, row,k=30):
-        row_fft = np.fft.fft(row)
-        finall_row = [None] * len(row_fft)
+    def convolution(self, row,k=8):
+        #row_fft = np.fft.fft(row)
+        finall_row = [None] * len(row)
 
         k_max=k
         h=0
 
-        for i in range(len(row_fft)):
+        for i in range(len(row)):
             sum=0
             #dodatnie wartosci k
             for k in range(k_max):
@@ -87,25 +89,34 @@ class Logic:
                 elif k%2==0:
                     h=0
                 else:
-                    h=-4/(math.pi**2 * k**2)
-                sum+=h*row_fft[i]
+                    h=-4/( (math.pi**2) * (k**2))
+                sum+=h*row[i]
 
             #ujemne wartosci k
             for k in range(1,k_max):
                 if k%2==0:
                     h=0
                 else:
-                    h=-4/(math.pi**2 * k**2)
+                    h=-4/( (math.pi**2) * (k**2))
 
                 if((i-k)>=0):
-                    sum+=h*row_fft[i-k]
+                    sum+=h*row[i-k]
 
             finall_row[i] = sum
 
-        return np.fft.ifft(finall_row)
+       # finall_row_clipped = np.fft.ifft(finall_row)
+       # finall_row_clipped= np.clip(finall_row_clipped,0,255)
+
+        return finall_row
 
     # Przeksztalcenie sinogramu na obrazek
     def inverse_radeon_transform(self):
+
+        if self.filter:
+            sinograme=self.sinogram_filtered;
+        else:
+            sinograme=self.sinogram;
+
         # Odwrotna transformacja
         self.angle = 0
         self.value_array = []
@@ -117,7 +128,7 @@ class Logic:
             self.set_positions()
             for j in range(len(self.detectors_pos)):
                 for coord in self.brehensam_path[j+(i*len(self.detectors_pos))]:
-                    self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinogram[i][j]
+                    self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += sinograme[i][j]
                     #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255
             #self.inverse_base.append(copy.deepcopy(self.value_array))
             self.angle += self.step
@@ -159,7 +170,7 @@ class Logic:
     def load_dicom(self, filename):
         ds = pydicom.dcmread(filename)
         # ds.pixel_array -> zwraca obrazek z formatu dicom
-        print(ds)
+        # print(ds)
         self.image = ds.pixel_array 
         # ds.PatientName -> zwraca nazwisko i imie
         # ds.PatientAge, ds.PatientSex, ds.BodyPartExamined, ds.PatientID, ds.PatientBirthDate ds.StudyDate, 
@@ -243,7 +254,4 @@ class Logic:
                 
         
         
-        
-        
-        
-        
+
