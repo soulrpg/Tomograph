@@ -14,13 +14,11 @@ class Logic:
         self.sinogram = []
         self.brehensam_path = []
         
-        # Wszystkie obrazy wynikowe sa zbierane do pamieci
-        self.inverse_base = []
-        
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
-        self.inverse_base = []
         self.iters = math.ceil(360/step)
+        self.original_image = self.image.copy()
+        self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
         self.create_square_image()
         self.image_copy = self.image.copy()
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
@@ -121,29 +119,38 @@ class Logic:
                 for coord in self.brehensam_path[j+(i*len(self.detectors_pos))]:
                     self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinogram[i][j]
                     #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255
-            self.inverse_base.append(copy.deepcopy(self.value_array))
+            #self.inverse_base.append(copy.deepcopy(self.value_array))
             self.angle += self.step
-        #self.normalize(copy.copy(self.value_array))
-        
-    # Zwraca obrazek wynikowy podanej iteracji
-    def get_iter(self, iter_num):
-        return self.normalize(self.inverse_base[iter_num-1])
-        
-        
-    # Normalizacja obrazka wynikowego
-    def normalize(self, value_array):
         max_value = 0
-        for line in value_array:
+        for line in self.value_array:
             if max(line) > max_value:
                 max_value = max(line)
-        for line in value_array:
+        for line in self.value_array:
             for i in range(len(line)):
                 if max_value != 0:
                     line[i] = line[i]/max_value*255
                 else:
                     break
-        return value_array
+        self.value_array = np.array(self.value_array, dtype=np.uint8)
+        self.result_image = self.cut_picture()
+        cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
+        print("RMSE:", self.rmse()) 
+
+    def rmse(self):
+        err = np.sum((self.original_image.astype("float") - self.result_image.astype("float")) ** 2)
+        err /= float(self.original_image.shape[0] * self.result_image.shape[1])
+        return math.sqrt(err)
         
+    def cut_picture(self):
+        print("Radius:", self.radius)
+        print("Shape X/2:", self.old_image_shape[1]/2)
+        print("Shape Y/2:", self.old_image_shape[0]/2)
+        print(self.value_array.shape)
+        #npic = pic[100:200, 100:200]
+        npic = self.value_array[int(self.radius) - math.ceil(self.old_image_shape[1]/2): int(self.radius) + math.ceil(self.old_image_shape[1]/2), int(self.radius) - math.ceil(self.old_image_shape[0]/2): int(self.radius) + math.ceil(self.old_image_shape[0]/2)]
+        print(npic.shape)
+        return npic
+         
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
         self.image = cv2.imread(filename)
@@ -161,6 +168,7 @@ class Logic:
         
     # Zmienia prostokatny obrazek na kwadratowy i przemnaza jego rozmiar w obu wymiarach o sqrt(2) 
     def create_square_image(self):
+        self.old_image_shape = copy.copy(self.image.shape)
         size = max(self.image.shape)
         size = math.ceil(size * math.sqrt(2))
         height, width, _ = self.image.shape

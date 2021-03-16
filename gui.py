@@ -21,6 +21,14 @@ class GUI:
         self.checkbutton_value = tk.IntVar()
         # Specjalna zmienna, która przechowuje stan slidera
         self.slider_value = tk.IntVar()
+        # 
+        self.slider_text_value = tk.StringVar()
+        
+        self.slider_text_value.set("1")
+        
+        self.rmse_text_value = tk.StringVar()
+        self.rmse_text_value.set("RMSE: -")
+       
         
         # Glowna ramka
         self.container = ttk.Frame(self.window)
@@ -31,6 +39,9 @@ class GUI:
         
         self.top_menu_2 = ttk.Frame(self.container)
         self.top_menu_2.pack()
+        
+        self.bottom_menu = ttk.Frame(self.container)
+        self.bottom_menu.pack(side = tk.BOTTOM)
         
         path = os.getcwd() + "//img"
         filenames = list(os.listdir(path))
@@ -73,10 +84,20 @@ class GUI:
         self.startButton = ttk.Button(self.top_menu_2, text="Start", command=lambda: self.start_clicked())
         self.startButton.pack(side = tk.LEFT, padx=10)
         
-        self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
+        self.iter = ttk.Label(self.top_menu_2, textvariable=self.slider_text_value)
+        self.iter.pack(side=tk.LEFT, padx=10)
+        
+        
+        self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_text_value,  
            from_ = 1, to = 20,  
            orient = tk.HORIZONTAL)
         self.slider.pack(side = tk.LEFT, padx=10)
+        
+        # Wynik RMSE
+        self.rmse_text = ttk.Label(self.bottom_menu, textvariable=self.rmse_text_value)
+        self.rmse_text.pack(side=tk.LEFT, padx=20)
+        
+        
         
         # Uruchamianie petli zdarzen
         self.window.mainloop()
@@ -89,23 +110,28 @@ class GUI:
         
     def start_clicked(self):
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
-            self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value)
-        result = self.logic.get_iter(int(360/float(self.stepEntry.get())))
-        cv2.imshow('Odwrotna transformacja', np.array(result, dtype=np.uint8))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()     
-        
+            self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value)        
         self.slider.destroy()
         self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
            from_ = 1, to = int(360/float(self.stepEntry.get())),  
            orient = tk.HORIZONTAL)
         self.slider.bind("<ButtonRelease-1>", self.sliderUpdate)
         self.slider.pack(side = tk.LEFT, padx=10)
+        tmp_rmse_result = "RMSE: " + str(round(self.logic.rmse(), 2))
+        print("TMP:", tmp_rmse_result)
+        self.rmse_text_value.set(tmp_rmse_result)
+        self.window.update_idletasks()
+        self.window.update()
+        cv2.waitKey(0)
+        cv2.destroyAllWindows() 
         
     def sliderUpdate(self, event):
         iter_num = int(self.slider.get())
         print("Slider iter:", iter_num)
+        self.slider_text_value.set(str(int(self.slider.get())))
         result = self.logic.get_iter(iter_num)
+        self.window.update_idletasks()
+        self.window.update()
         cv2.imshow('Odwrotna transformacja iter', np.array(result, dtype=np.uint8))
         cv2.waitKey(0)
         cv2.destroyAllWindows()     
