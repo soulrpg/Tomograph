@@ -90,12 +90,25 @@ class GUI:
     def start_clicked(self):
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
             self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value)
+        result = self.logic.get_iter(int(360/float(self.stepEntry.get())))
+        cv2.imshow('Odwrotna transformacja', np.array(result, dtype=np.uint8))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()     
         
-        #self.slider.destroy()
-        #self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
-        #   from_ = 1, to = ITER_NUM,  
-        #   orient = tk.HORIZONTAL)
-        #self.slider.pack(side = tk.LEFT, padx=10)
+        self.slider.destroy()
+        self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
+           from_ = 1, to = int(360/float(self.stepEntry.get())),  
+           orient = tk.HORIZONTAL)
+        self.slider.bind("<ButtonRelease-1>", self.sliderUpdate)
+        self.slider.pack(side = tk.LEFT, padx=10)
+        
+    def sliderUpdate(self, event):
+        iter_num = int(self.slider.get())
+        print("Slider iter:", iter_num)
+        result = self.logic.get_iter(iter_num)
+        cv2.imshow('Odwrotna transformacja iter', np.array(result, dtype=np.uint8))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()     
         
     def checkbutton_change(self):
         print(self.checkbutton_value.get())

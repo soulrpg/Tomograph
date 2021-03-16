@@ -12,14 +12,19 @@ class Logic:
         self.emiter_pos = [None, None]
         self.detectors_pos = []
         self.sinogram = []
+        self.brehensam_path = []
+        
+        # Wszystkie obrazy wynikowe sa zbierane do pamieci
+        self.inverse_base = []
         
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
+        self.inverse_base = []
+        self.iters = math.ceil(360/step)
         self.create_square_image()
         self.image_copy = self.image.copy()
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         cv2.imshow('Wejscie', self.image)
-        self.iters = iters
         self.step = math.radians(step)
         for i in range(detectors_num):
             self.detectors_pos.append([None, None])
@@ -28,13 +33,14 @@ class Logic:
         self.radius = self.image.shape[0]/2
         self.sinogram = []
         # Właściwy algorytm
+        self.brehensam_path = []
         for i in range(self.iters):
             self.set_positions()
             self.sinogram.append([])
             cv2.circle(self.image_copy, (int(self.emiter_pos[0]), int(self.emiter_pos[1])), 5, (0,255,0), -1)
             for j in range(detectors_num):
                 path = self.bresenham_line(copy.copy(self.emiter_pos), copy.copy(self.detectors_pos[j]))
-                print(self.detectors_pos[j])
+                self.brehensam_path.append(path)
                 cv2.circle(self.image_copy, (int(self. detectors_pos[j][0]), int(self.detectors_pos[j][1])), 5, (0,0,255), -1)
                 value = 0
                 for coord in path:
@@ -44,6 +50,7 @@ class Logic:
             self.angle += self.step
             cv2.imshow('Linia', self.image_copy)
         max_value = 0
+        # Normalizacja sinogramu
         for line in self.sinogram:
             if max(line) > max_value:
                 max_value = max(line)
@@ -54,10 +61,53 @@ class Logic:
                     line[i] = line[i]/max_value * 255
                 else:
                     break
-        cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
+        self.sinogram_filtered = []
+        for line in self.sinogram:
+            self.sinogram_filtered.append(self.convolution(line))
+        if self.filter:
+            cv2.imshow('Sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
+        else:
+            cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
+        self.inverse_radeon_transform()
         
+    
+    def convolution(self, row,k=30):
+        row_fft = np.fft.fft(row)
+        finall_row = [None] * len(row_fft)
+
+        k_max=k
+        h=0
+
+        for i in range(len(row_fft)):
+            sum=0
+            #dodatnie wartosci k
+            for k in range(k_max):
+                if k==0:
+                    h=1
+                elif k%2==0:
+                    h=0
+                else:
+                    h=-4/(math.pi**2 * k**2)
+                sum+=h*row_fft[i]
+
+            #ujemne wartosci k
+            for k in range(1,k_max):
+                if k%2==0:
+                    h=0
+                else:
+                    h=-4/(math.pi**2 * k**2)
+
+                if((i-k)>=0):
+                    sum+=h*row_fft[i-k]
+
+            finall_row[i] = sum
+
+        return np.fft.ifft(finall_row)
+
+    # Przeksztalcenie sinogramu na obrazek
+    def inverse_radeon_transform(self):
         # Odwrotna transformacja
         self.angle = 0
         self.value_array = []
@@ -67,27 +117,33 @@ class Logic:
                 self.value_array[i].append(0)
         for i in range(self.iters):
             self.set_positions()
-            for j in range(detectors_num):
-                path = self.bresenham_line(copy.copy(self.emiter_pos), copy.copy(self.detectors_pos[j]))
-                for coord in path:
+            for j in range(len(self.detectors_pos)):
+                for coord in self.brehensam_path[j+(i*len(self.detectors_pos))]:
                     self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinogram[i][j]
                     #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255
+            self.inverse_base.append(copy.deepcopy(self.value_array))
             self.angle += self.step
+        #self.normalize(copy.copy(self.value_array))
+        
+    # Zwraca obrazek wynikowy podanej iteracji
+    def get_iter(self, iter_num):
+        return self.normalize(self.inverse_base[iter_num-1])
+        
+        
+    # Normalizacja obrazka wynikowego
+    def normalize(self, value_array):
         max_value = 0
-        for line in self.value_array:
+        for line in value_array:
             if max(line) > max_value:
                 max_value = max(line)
-        for line in self.value_array:
+        for line in value_array:
             for i in range(len(line)):
                 if max_value != 0:
                     line[i] = line[i]/max_value*255
-                    #print(line[i])
                 else:
                     break
-        cv2.imshow('Odwrotna transformacja', np.array(self.value_array, dtype=np.uint8))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()        
-    
+        return value_array
+        
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
         self.image = cv2.imread(filename)
@@ -129,14 +185,14 @@ class Logic:
     
     def bresenham_line(self, begin, end):
         path = []
-        print("Start point:", begin)
-        print("End point:", end)
+        #print("Start point:", begin)
+        #print("End point:", end)
         delta_x = abs(end[0] - begin[0])
         delta_y = abs(end[1] - begin[1])
-        print("Delta x:", delta_x)
-        print("Delta y:", delta_y)
+        #print("Delta x:", delta_x)
+        #print("Delta y:", delta_y)
         if delta_x > delta_y: # x to driving axis
-            print("X driving axis")
+            #print("X driving axis")
             if end[0] < begin[0]:
                 end, begin = begin, end
             m = delta_y / delta_x
@@ -156,7 +212,7 @@ class Logic:
                 i += 1
                 error += m
         else: # Y to driving axis
-            print("Y driving axis")
+            #print("Y driving axis")
             if end[1] < begin[1]:
                 end, begin = begin, end
             m = delta_x / delta_y 
