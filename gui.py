@@ -97,6 +97,9 @@ class GUI:
         self.rmse_text = ttk.Label(self.bottom_menu, textvariable=self.rmse_text_value)
         self.rmse_text.pack(side=tk.LEFT, padx=20)
         
+        self.form_button = ttk.Button(self.bottom_menu, text="Formularz DICOM", command=lambda: self.form_open())
+        self.form_button.pack(side=tk.LEFT, padx=10)
+        
         
         
         # Uruchamianie petli zdarzen
@@ -138,3 +141,6 @@ class GUI:
         
     def checkbutton_change(self):
         print(self.checkbutton_value.get())
+        
+    def form_open(self):
+        self.logic.dicom.show_form(self.window)

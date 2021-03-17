@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import math
 import copy
+from dicom import *
 
 class Logic:
     def __init__(self):
@@ -14,15 +15,11 @@ class Logic:
         self.sinogram = []
         self.brehensam_path = []
         self.sinogram_filtered = []
+        self.dicom = Dicom()
 
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
         self.iters = math.ceil(360/step)
-        self.original_image = self.image.copy()
-        self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
-        self.create_square_image()
-        self.image_copy = self.image.copy()
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         cv2.imshow('Wejscie', self.image)
         self.step = math.radians(step)
         for i in range(detectors_num):
@@ -144,6 +141,8 @@ class Logic:
                     break
         self.value_array = np.array(self.value_array, dtype=np.uint8)
         self.result_image = self.cut_picture()
+        # Dla zapisywania jako plik DICOM
+        self.dicom.set_image(self.result_image)
         cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
         print("RMSE:", self.rmse()) 
 
@@ -165,25 +164,34 @@ class Logic:
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
         self.image = cv2.imread(filename)
+        self.original_image = self.image.copy()
+        self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
+        self.create_square_image()
+        self.image_copy = self.image.copy()
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         print("Img loaded!")
     
     def load_dicom(self, filename):
-        ds = pydicom.dcmread(filename)
-        # ds.pixel_array -> zwraca obrazek z formatu dicom
-        # print(ds)
-        self.image = ds.pixel_array 
-        # ds.PatientName -> zwraca nazwisko i imie
-        # ds.PatientAge, ds.PatientSex, ds.BodyPartExamined, ds.PatientID, ds.PatientBirthDate ds.StudyDate, 
-        # nie wiem jakie metapole odpowiada za komentarz?
-        print(ds.PatientName)
+        self.dicom.load_from_dcm(filename)
+        self.image = self.dicom.ds.pixel_array
+        self.original_image = self.image.copy()
+        self.create_square_image()
+        self.image_copy = self.image.copy()
+        print(self.image.shape)
+        print("DICOM Img loaded!")
         
     # Zmienia prostokatny obrazek na kwadratowy i przemnaza jego rozmiar w obu wymiarach o sqrt(2) 
     def create_square_image(self):
         self.old_image_shape = copy.copy(self.image.shape)
         size = max(self.image.shape)
         size = math.ceil(size * math.sqrt(2))
-        height, width, _ = self.image.shape
-        square_image = np.zeros((size, size, 3), np.uint8)
+        height, width, square_image = None, None, None
+        if len(self.image.shape) == 3:
+            height, width, _ = self.image.shape
+            square_image = np.zeros((size, size, 3), np.uint8)
+        else:
+            height, width = self.image.shape
+            square_image = np.zeros((size, size), np.uint8)
         square_image[int((size-height)/2):int((size+height)/2), int((size-width)/2):int((size+width)/2)] = self.image
         self.image = square_image
         #cv2.imshow('image', self.image)
