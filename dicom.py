@@ -16,9 +16,8 @@ class Dicom:
         self.last_name = ""
         self.sex = "K"
         self.age = "0"
-        self.birth_date = ""
+        self.birth_date = "//"
         self.body_part = ""
-        self.study_date = "//"
         self.comment = ""
         self.patient_id = ""
         self.image = None
@@ -26,8 +25,14 @@ class Dicom:
     def load_from_dcm(self, filename):
         self.ds = pydicom.dcmread(filename)
         print(self.ds)
-        patient_name = self.ds.PatientName 
-        print(patient_name)
+        self.last_name = self.ds.PatientName.split("^")[0]
+        self.first_name = self.ds.PatientName.split("^")[1]
+        self.sex = self.ds.PatientSex
+        self.age = self.ds.PatientAge
+        self.birth_date = self.ds.PatientBirthDate
+        self.body_part = self.ds.BodyPartExamined
+        self.comment = self.ds.PatientComments
+        self.image = self.ds.pixel_array
         
     def set_image(self, img):
         # Dla zapisywania
@@ -58,6 +63,11 @@ class Dicom:
         
         tmp_ds.PatientName = self.last_name_field.get() + "^" + self.first_name_field.get()
         tmp_ds.PatientID = self.id_field.get()
+        tmp_ds.PatientAge = self.age_field.get()
+        tmp_ds.PatientSex = self.sex_field.get()
+        tmp.ds.BodyPartExamined = self.body_part_field.get()
+        tmp_ds.PatientBirthDate = self.birth_date_field.get()
+        tmp_ds.PatientComments = self.comment_entry.get()
         
         tmp_ds.PixelData = self.image.tobytes()
         
