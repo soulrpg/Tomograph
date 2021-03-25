@@ -4,8 +4,12 @@ from tkinter import Canvas
 from tkinter import messagebox
 import os
 from logic import *
+from PIL import Image, ImageTk
 
 ITER_NUM = 180
+
+CANVAS_WIDTH = 720
+CANVAS_HEIGHT = 540
 
 class GUI:
     def __init__(self, title, WIDTH, HEIGHT, RESIZABLE):
@@ -39,6 +43,9 @@ class GUI:
         
         self.top_menu_2 = ttk.Frame(self.container)
         self.top_menu_2.pack()
+        
+        self.top_menu_3 = ttk.Frame(self.container)
+        self.top_menu_3.pack()
         
         self.bottom_menu = ttk.Frame(self.container)
         self.bottom_menu.pack(side = tk.BOTTOM)
@@ -100,6 +107,11 @@ class GUI:
         self.form_button = ttk.Button(self.bottom_menu, text="Formularz DICOM", command=lambda: self.form_open())
         self.form_button.pack(side=tk.LEFT, padx=10)
         
+        # Trzeci wiersz - CANVAS
+        
+        self.canvas = tk.Canvas(self.top_menu_3, bg="black", width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
+        self.canvas.pack()
+        
         
         
         # Uruchamianie petli zdarzen
@@ -113,7 +125,8 @@ class GUI:
         
     def start_clicked(self):
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
-            self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value.get())
+            tmp = self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value.get())
+        self.redrawCanvas(tmp)
         self.slider.destroy()
         self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
            from_ = 1, to = int(360/float(self.stepEntry.get())),  
@@ -132,12 +145,24 @@ class GUI:
         iter_num = int(self.slider.get())
         print("Slider iter:", iter_num)
         self.slider_text_value.set(str(int(self.slider.get())))
-        result = self.logic.get_iter(iter_num)
         self.window.update_idletasks()
         self.window.update()
-        cv2.imshow('Odwrotna transformacja iter', np.array(result, dtype=np.uint8))
+        self.logic.inverse_radeon_transform(iter_num)
+        cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
         cv2.waitKey(0)
-        cv2.destroyAllWindows()     
+        cv2.destroyAllWindows()    
+
+    def redrawCanvas(self, img):
+        dimensions = (CANVAS_WIDTH, CANVAS_HEIGHT)
+        resized = cv2.resize(img, dimensions, interpolation = cv2.INTER_AREA)
+        img = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+        im = Image.fromarray(img)
+        # Musi byc utworzony jako self gdyz w innym przypadku nie jest przechowywany w pamieci
+        self.new_img = ImageTk.PhotoImage(image = im)
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.new_img)
+        self.canvas.update()
+        self.window.update_idletasks()
+        self.window.update()
         
     def checkbutton_change(self):
         print(self.checkbutton_value.get())

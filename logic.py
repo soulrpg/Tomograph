@@ -55,8 +55,6 @@ class Logic:
                 for coord in path:
                     value += self.image[min(coord[1], self.image.shape[1] - 1), min(coord[0], self.image.shape[0] - 1)]
                     self.image_copy[min(coord[1], self.image.shape[1] - 1), min(coord[0], self.image.shape[0] - 1)] = [255, 0, 0] 
-                    # Odnotowujemy przejscie po danym pixelu
-                    self.val_count[min(coord[1], self.image.shape[1] - 1)][min(coord[0], self.image.shape[0] - 1)] += 1
                 self.sinogram[i].append(value)
             self.angle += self.step
             cv2.imshow('Linia', self.image_copy)
@@ -72,7 +70,7 @@ class Logic:
                     line[i] = line[i]/max_value * 255
                 else:
                     break
-
+                    
         if self.filter:
             self.sinogram_filtered = []
             for line in self.sinogram:
@@ -83,6 +81,8 @@ class Logic:
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         self.inverse_radeon_transform()
+        
+        return self.result_image
         
     
     def convolution(self, row,k=8):
@@ -122,49 +122,65 @@ class Logic:
         return finall_row
 
     # Przeksztalcenie sinogramu na obrazek
-    def inverse_radeon_transform(self):
+    def inverse_radeon_transform(self, iter=None):
 
         if self.filter:
             sinograme=self.sinogram_filtered;
         else:
             sinograme=self.sinogram;
+            
+        if type(iter) == type(None):
+            iter = self.iters
 
         # Odwrotna transformacja
         self.angle = 0
         self.value_array = []
+        print("Val count:", len(self.val_count))
+        print("Val count i:", len(self.val_count[0]))
+        print("image shape:", self.image.shape)
         for i in range(self.image.shape[0]):
             self.value_array.append([])
             for j in range(self.image.shape[1]):
                 self.value_array[i].append(0)
-        for i in range(self.iters):
+        for i in range(iter):
             self.set_positions()
             for j in range(len(self.detectors_pos)):
                 for coord in self.brehensam_path[j+(i*len(self.detectors_pos))]:
                     self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += sinograme[i][j]
+                    # Odnotowujemy przejscie po danym pixelu
+                    self.val_count[min(coord[1], self.image.shape[1] - 1)][min(coord[0], self.image.shape[0] - 1)] += 1
                     #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255
             #self.inverse_base.append(copy.deepcopy(self.value_array))
             self.angle += self.step
             
+        #print(self.val_count)
+            
         # Normalizacja II - dzielimy kazda wartosc pixela przez ilosc lini jakie przeszly przez dany pixel
-        for i in range(len(self.value_array)):
-            for j in range(len(self.value_array[i])):
-                if self.val_count[i][j] != 0:
-                    self.value_array[i][j] /= self.val_count[i][j]
-        #max_value = 0
-        #for line in self.value_array:
-        #    if max(line) > max_value:
-        #        max_value = max(line)
-        #for line in self.value_array:
-        #    for i in range(len(line)):
-        #        if max_value != 0:
-        #            line[i] = line[i]/max_value*255
+        #for i in range(len(self.value_array)):
+        #    for j in range(len(self.value_array[i])):
+        #        if self.val_count[i][j] != 0:
+        #            self.value_array[i][j] /= self.val_count[i][j]
         #        else:
-        #            break
+        #            if
+        #            print(self.value_array[i][j])
+        max_value = 0
+        for line in self.value_array:
+            if max(line) > max_value:
+                max_value = max(line)
+        for line in self.value_array:
+            for i in range(len(line)):
+                if max_value != 0:
+                    line[i] = line[i]/max_value*255
+                else:
+                    break
         self.value_array = np.array(self.value_array, dtype=np.uint8)
-        self.result_image = self.cut_picture()
+        self.result_image = self.value_array #self.cut_picture()
         # Dla zapisywania jako plik DICOM
         self.dicom.set_image(self.result_image)
-        cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
+        if iter != self.iters:
+            cv2.imshow('Odwrotna transformacja ucięta (iter x)', self.result_image)
+        else:
+            cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
         print("RMSE:", self.rmse()) 
 
     def rmse(self):
@@ -187,7 +203,7 @@ class Logic:
         self.image = cv2.imread(filename)
         self.original_image = self.image.copy()
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
-        self.create_square_image()
+        #self.create_square_image()
         self.image_copy = self.image.copy()
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         print("Img loaded!")
@@ -196,7 +212,7 @@ class Logic:
         self.dicom.load_from_dcm(filename)
         self.image = self.dicom.image
         self.original_image = self.image.copy()
-        self.create_square_image()
+        #self.create_square_image()
         self.image_copy = self.image.copy()
         print(self.image.shape)
         print("DICOM Img loaded!")
