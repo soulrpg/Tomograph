@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 
 ITER_NUM = 180
 
-CANVAS_WIDTH = 720
+CANVAS_WIDTH = 1100
 CANVAS_HEIGHT = 540
 
 class GUI:
@@ -122,7 +122,25 @@ class GUI:
             self.logic.load_dicom("img/" + self.file_list.get())
         else:
             self.logic.load_img("img/" + self.file_list.get())
-        
+
+        #kod niczym z redrawCanvas aby wyswietlic 1 obraz po zaladowaniu
+        cv2.imwrite("imgSaved/imgOrginal.jpg", self.logic.image)
+        img_orginal = cv2.imread("imgSaved/imgOrginal.jpg")
+        img_orginal = cv2.rectangle(img_orginal, (0, 0), (img_orginal.shape[0] - 1, img_orginal.shape[1] - 1),
+                                    (240, 240, 240), 1)
+
+        scale = self.getScaleRatio(img_orginal.shape)
+
+        self.stackedImg = ImageTk.PhotoImage(
+            image=Image.fromarray(self.stackImages(scale, ([img_orginal]))))
+
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
+        self.canvas.update()
+        self.window.update_idletasks()
+        self.window.update()
+
+
+
     def start_clicked(self):
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
             tmp = self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value.get())
@@ -153,19 +171,74 @@ class GUI:
         cv2.destroyAllWindows()    
 
     def redrawCanvas(self, img):
-        dimensions = (CANVAS_WIDTH, CANVAS_HEIGHT)
-        resized = cv2.resize(img, dimensions, interpolation = cv2.INTER_AREA)
-        img = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
-        im = Image.fromarray(img)
+        #dimensions = (CANVAS_WIDTH, CANVAS_HEIGHT)
+        #resized = cv2.resize(img, dimensions, interpolation = cv2.INTER_AREA)
+        #img = cv2.cvtColor(resized, cv2.COLOR_GRAY2RGB)
+        #im = Image.fromarray(img)
         # Musi byc utworzony jako self gdyz w innym przypadku nie jest przechowywany w pamieci
-        self.new_img = ImageTk.PhotoImage(image = im)
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.new_img)
+        #self.new_img = ImageTk.PhotoImage(image = im)
+
+        cv2.imwrite("imgSaved/imgResult.jpg",self.logic.result_image)
+        #odczytuje z pliku bo cos nie dzialalo z obrazem, tak lawtiej
+        img_orginal = cv2.imread("imgSaved/imgOrginal.jpg")
+        img_result = cv2.imread("imgSaved/imgResult.jpg")
+
+        img_orginal = cv2.rectangle(img_orginal, (0, 0), (img_orginal.shape[0] - 1, img_orginal.shape[1] - 1), (240, 240, 240),1)
+        img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[0]-1,img_result.shape[1]-1), (200,240,240), 1)
+
+        scale = self.getScaleRatio(img_orginal.shape)
+
+        self.stackedImg =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale,([img_orginal,img_result])) ))
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
         self.canvas.update()
         self.window.update_idletasks()
         self.window.update()
+
         
     def checkbutton_change(self):
         print(self.checkbutton_value.get())
         
     def form_open(self):
         self.logic.dicom.show_form(self.window)
+
+
+    def stackImages(self, scale, imgArray):
+        rows = len(imgArray)
+        cols = len(imgArray[0])
+        rowsAvailable = isinstance(imgArray[0], list)
+        width = imgArray[0][0].shape[1]
+        height = imgArray[0][0].shape[0]
+        if rowsAvailable:
+            for x in range(0, rows):
+                for y in range(0, cols):
+                    if imgArray[x][y].shape[:2] == imgArray[0][0].shape[:2]:
+                        imgArray[x][y] = cv2.resize(imgArray[x][y], (0, 0), None, scale, scale)
+                    else:
+                        imgArray[x][y] = cv2.resize(imgArray[x][y], (imgArray[0][0].shape[1], imgArray[0][0].shape[0]),
+                                                    None, scale, scale)
+                    if len(imgArray[x][y].shape) == 2: imgArray[x][y] = cv2.cvtColor(imgArray[x][y], cv2.COLOR_GRAY2BGR)
+            imageBlank = np.zeros((height, width, 3), np.uint8)
+            hor = [imageBlank] * rows
+            hor_con = [imageBlank] * rows
+            for x in range(0, rows):
+                hor[x] = np.hstack(imgArray[x])
+            ver = np.vstack(hor)
+        else:
+            for x in range(0, rows):
+                if imgArray[x].shape[:2] == imgArray[0].shape[:2]:
+                    imgArray[x] = cv2.resize(imgArray[x], (0, 0), None, scale, scale)
+                else:
+                    imgArray[x] = cv2.resize(imgArray[x], (imgArray[0].shape[1], imgArray[0].shape[0]), None, scale,
+                                             scale)
+                if len(imgArray[x].shape) == 2: imgArray[x] = cv2.cvtColor(imgArray[x], cv2.COLOR_GRAY2BGR)
+            hor = np.hstack(imgArray)
+            ver = hor
+        return ver
+
+    def getScaleRatio(self,shapeTab):
+        ratioWidth = shapeTab[0]*2/ CANVAS_WIDTH
+        ratioHeight = shapeTab[1] / CANVAS_HEIGHT
+        scale = 1.0
+        if (max(ratioWidth, ratioHeight) > 1):
+            scale = 1.0 / max(ratioWidth, ratioHeight)
+        return scale
