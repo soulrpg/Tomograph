@@ -93,22 +93,17 @@ class Logic:
         h = 0
         for i in range(len(row)):
             sum = row[i]
-            #dodatnie wartosci k
+
             for k in range(1,k_max):
                 if k % 2 == 0:
                     continue
                 else:
                     h = -4/((math.pi ** 2) * (k ** 2))
 
+                # dodatnie wartosci k
                 if ((i + k ) < len(row)):
                     sum += h * row[i+k]
-
-            for k in range(1, k_max):
-                if k % 2 == 0:
-                    continue
-                else:
-                    h = -4 / ((math.pi ** 2) * (k ** 2))
-
+                # ujemne wartosci k
                 if ((i - k) >= 0):
                     sum += h * row[i - k]
 
