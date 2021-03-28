@@ -28,7 +28,7 @@ class Logic:
         self.sinogram_filtered = []
         
         self.iters = math.ceil(360/step)
-        cv2.imshow('Wejscie', self.image)
+        #cv2.imshow('Wejscie', self.image)
         self.step = math.radians(step)
         for i in range(detectors_num):
             self.detectors_pos.append([None, None])
@@ -57,7 +57,7 @@ class Logic:
                     self.image_copy[min(coord[1], self.image.shape[1] - 1), min(coord[0], self.image.shape[0] - 1)] = [255, 0, 0] 
                 self.sinogram[i].append(value)
             self.angle += self.step
-            cv2.imshow('Linia', self.image_copy)
+            #cv2.imshow('Linia', self.image_copy)
         max_value = 0
         # Normalizacja sinogramu
         for line in self.sinogram:
@@ -75,51 +75,46 @@ class Logic:
             self.sinogram_filtered = []
             for line in self.sinogram:
                 self.sinogram_filtered.append(self.convolution(line))
+
             cv2.imshow('FIltered sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
-        else:
-            cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
+
+        cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         self.inverse_radeon_transform()
         
         return self.result_image
-        
-    
+
     def convolution(self, row):
-        row_fft = np.fft.fft(row)
+
         finall_row = [None] * len(row)
 
-        k_max = int(len(row_fft) / 4)
+        k_max =  int(len(row)/10)
         h = 0
-
-        for i in range(len(row_fft)):
-            sum = 0
-            # dodatnie wartosci k
-            for k in range(k_max):
-                if k == 0:
-                    h = 1
-                elif k % 2 == 0:
-                    h = 0
+        for i in range(len(row)):
+            sum = row[i]
+            #dodatnie wartosci k
+            for k in range(1,k_max):
+                if k % 2 == 0:
+                    continue
                 else:
-                    h = -4 / ((math.pi ** 2) * (k ** 2))
-                sum += h * row_fft[i]
+                    h = -4/((math.pi ** 2) * (k ** 2))
 
-            # ujemne wartosci k
+                if ((i + k ) < len(row)):
+                    sum += h * row[i+k]
+
             for k in range(1, k_max):
                 if k % 2 == 0:
-                    h = 0
+                    continue
                 else:
                     h = -4 / ((math.pi ** 2) * (k ** 2))
 
                 if ((i - k) >= 0):
-                    sum += h * row_fft[i - k]
+                    sum += h * row[i - k]
 
             finall_row[i] = sum
 
-        finall_row_clipped = np.fft.ifft(finall_row)
-        finall_row_clipped = np.clip(finall_row_clipped, 0, 255)
-
-        return finall_row_clipped
+        return finall_row
 
     # Przeksztalcenie sinogramu na obrazek
     def inverse_radeon_transform(self, iter=None):
@@ -177,10 +172,10 @@ class Logic:
         self.result_image = self.value_array #self.cut_picture()
         # Dla zapisywania jako plik DICOM
         self.dicom.set_image(self.result_image)
-        if iter != self.iters:
-            cv2.imshow('Odwrotna transformacja ucięta (iter x)', self.result_image)
-        else:
-            cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
+        # if iter != self.iters:
+        #     cv2.imshow('Odwrotna transformacja ucięta (iter x)', self.result_image)
+        # else:
+        #     cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
         print("RMSE:", self.rmse()) 
 
     def rmse(self):
