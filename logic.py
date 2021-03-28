@@ -85,41 +85,41 @@ class Logic:
         return self.result_image
         
     
-    def convolution(self, row,k=8):
-        #row_fft = np.fft.fft(row)
+    def convolution(self, row):
+        row_fft = np.fft.fft(row)
         finall_row = [None] * len(row)
 
-        k_max=k
-        h=0
+        k_max = int(len(row_fft) / 4)
+        h = 0
 
-        for i in range(len(row)):
-            sum=0
-            #dodatnie wartosci k
+        for i in range(len(row_fft)):
+            sum = 0
+            # dodatnie wartosci k
             for k in range(k_max):
-                if k==0:
-                    h=1
-                elif k%2==0:
-                    h=0
+                if k == 0:
+                    h = 1
+                elif k % 2 == 0:
+                    h = 0
                 else:
-                    h=-4/( (math.pi**2) * (k**2))
-                sum+=h*row[i]
+                    h = -4 / ((math.pi ** 2) * (k ** 2))
+                sum += h * row_fft[i]
 
-            #ujemne wartosci k
-            for k in range(1,k_max):
-                if k%2==0:
-                    h=0
+            # ujemne wartosci k
+            for k in range(1, k_max):
+                if k % 2 == 0:
+                    h = 0
                 else:
-                    h=-4/( (math.pi**2) * (k**2))
+                    h = -4 / ((math.pi ** 2) * (k ** 2))
 
-                if((i-k)>=0):
-                    sum+=h*row[i-k]
+                if ((i - k) >= 0):
+                    sum += h * row_fft[i - k]
 
             finall_row[i] = sum
 
-       # finall_row_clipped = np.fft.ifft(finall_row)
-       # finall_row_clipped= np.clip(finall_row_clipped,0,255)
+        finall_row_clipped = np.fft.ifft(finall_row)
+        finall_row_clipped = np.clip(finall_row_clipped, 0, 255)
 
-        return finall_row
+        return finall_row_clipped
 
     # Przeksztalcenie sinogramu na obrazek
     def inverse_radeon_transform(self, iter=None):
