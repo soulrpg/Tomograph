@@ -96,7 +96,7 @@ class GUI:
         
         
         self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_text_value,  
-           from_ = 1, to = 20,  
+           from_ = 1, to = 1,  
            orient = tk.HORIZONTAL)
         self.slider.pack(side = tk.LEFT, padx=10)
         
@@ -118,7 +118,7 @@ class GUI:
         self.window.mainloop()
         
     def load_clicked(self):
-        if self.file_list.get()[-3:] == "DCM":
+        if (self.file_list.get()[-3:]).upper() == "DCM":
             self.logic.load_dicom("img/" + self.file_list.get())
         else:
             self.logic.load_img("img/" + self.file_list.get())
@@ -165,7 +165,8 @@ class GUI:
         self.slider_text_value.set(str(int(self.slider.get())))
         self.window.update_idletasks()
         self.window.update()
-        self.logic.inverse_radeon_transform(iter_num)
+        tmp = self.logic.inverse_radeon_transform(iter_num)
+        self.redrawCanvas(tmp)
         cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
         cv2.waitKey(0)
         cv2.destroyAllWindows()    

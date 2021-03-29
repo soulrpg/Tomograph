@@ -76,6 +76,7 @@ class Logic:
             for line in self.sinogram:
                 self.sinogram_filtered.append(self.convolution(line))
 
+            #self.non_blocking_imshow()
             cv2.imshow('FIltered sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
 
         cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
@@ -172,6 +173,8 @@ class Logic:
         # else:
         #     cv2.imshow('Odwrotna transformacja ucięta', self.result_image)
         print("RMSE:", self.rmse()) 
+        
+        return self.result_image
 
     def rmse(self):
         err = np.sum((self.original_image.astype("float") - self.result_image.astype("float")) ** 2)
@@ -203,7 +206,7 @@ class Logic:
         self.image = self.dicom.image
         self.original_image = self.image.copy()
         #self.create_square_image()
-        self.image_copy = self.image.copy()
+        self.image_copy = cv2.cvtColor(self.image.copy(), cv2.COLOR_GRAY2BGR)
         print(self.image.shape)
         print("DICOM Img loaded!")
         
