@@ -75,7 +75,7 @@ class GUI:
         self.detectors.pack(side=tk.LEFT, padx=10)
         
         self.detectorsEntry = ttk.Entry(self.top_menu_2, width = 5)
-        self.detectorsEntry.insert(0, "3")
+        self.detectorsEntry.insert(0, "180")
         self.detectorsEntry.pack(side = tk.LEFT)
         
         self.range_span = ttk.Label(self.top_menu_2, text="Rozpiętość:")
