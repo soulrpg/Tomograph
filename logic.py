@@ -77,9 +77,9 @@ class Logic:
                 self.sinogram_filtered.append(self.convolution(line))
 
             #self.non_blocking_imshow()
-            cv2.imshow('FIltered sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
+            #cv2.imshow('FIltered sinogram', np.array(self.sinogram_filtered, dtype=np.uint8))
 
-        cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
+        #cv2.imshow('Sinogram', np.array(self.sinogram, dtype=np.uint8))
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         self.inverse_radeon_transform()
@@ -116,9 +116,9 @@ class Logic:
     def inverse_radeon_transform(self, iter=None):
 
         if self.filter:
-            sinograme=self.sinogram_filtered;
+            self.sinograme=self.sinogram_filtered;
         else:
-            sinograme=self.sinogram;
+            self.sinograme=self.sinogram;
             
         if type(iter) == type(None):
             iter = self.iters
@@ -137,7 +137,7 @@ class Logic:
             self.set_positions()
             for j in range(len(self.detectors_pos)):
                 for coord in self.brehensam_path[j+(i*len(self.detectors_pos))]:
-                    self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += sinograme[i][j]
+                    self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] += self.sinograme[i][j]
                     # Odnotowujemy przejscie po danym pixelu
                     self.val_count[min(coord[1], self.image.shape[1] - 1)][min(coord[0], self.image.shape[0] - 1)] += 1
                     #self.value_array[min(coord[1], self.image.shape[1]-1)][min(coord[0], self.image.shape[0]-1)] = 255

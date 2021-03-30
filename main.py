@@ -8,7 +8,7 @@ def main():
     #logic.create_square_image()
     #logic = Logic()
     #logic.bresenham_line([3, 2], [1, 6])
-    gui = GUI("Tomograph", 1200, 700, False)
+    gui = GUI("Tomograph", 1200, 956, False)
   
 
 if __name__ == '__main__':

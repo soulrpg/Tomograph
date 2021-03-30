@@ -2,6 +2,7 @@ import pydicom
 from pydicom.data import get_testdata_file
 from pydicom.dataset import Dataset, FileDataset, FileMetaDataset
 import datetime
+from datetime import date
 import os
 import tempfile
 
@@ -54,10 +55,18 @@ class Dicom:
         file_meta.MediaStorageSOPInstanceUID = "1.2.3"
         file_meta.ImplementationClassUID = "1.2.3.4"
         file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+        #file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'#pydicom.uid.ImplicitVRLittleEndian
         print("Setting dataset values...")
         # Create the FileDataset instance (initially no data elements, but file_meta
         # supplied)
         tmp_ds = FileDataset(self.file_name_field.get(), {}, file_meta=file_meta, preamble=b"\0" * 128)
+        
+        tmp_ds.SOPClassUID = "123"
+        tmp_ds.SOPInstanceUID = "123"
+        tmp_ds.StudyInstanceUID = "123"
+        tmp_ds.SeriesInstanceUID = "123"
+        tmp_ds.Modality = "CT"
+        tmp_ds.ImageType = ['ORIGINAL', 'PRIMARY', 'AXIAL']
         
         # Set the transfer syntax
         tmp_ds.is_little_endian = True
@@ -76,8 +85,10 @@ class Dicom:
         tmp_ds.BodyPartExamined = self.body_part_field.get()
         tmp_ds.PatientBirthDate = self.birth_date_field.get()
         tmp_ds.PatientComments = self.comment_entry.get("1.0", tk.END)
+        tmp_ds.StudyID = ""
+        tmp_ds.SeriesInstanceUID = tmp_ds.StudyInstanceUID = pydicom.uid.generate_uid()
         
-        tmp_ds.PixelData = self.image.tobytes()
+        tmp_ds.PixelData = self.image#.tobytes()
         
         tmp_ds.BitsAllocated = 8
         tmp_ds.Rows = self.image.shape[0]
@@ -85,9 +96,14 @@ class Dicom:
         tmp_ds.PixelRepresentation = 0
         tmp_ds.SamplesPerPixel = 1
         tmp_ds.PhotometricInterpretation = "MONOCHROME2"
+        tmp_ds.NumberOfFrames = 1
+        tmp_ds.PlanarConfiguration = 0
+        tmp_ds.BitsAllocated = 8
+        tmp_ds.BitsStored = 8
+        tmp_ds.HighBit = 7
 
         print("Writing test file", self.file_name_field.get())
-        tmp_ds.save_as("img/" + self.file_name_field.get())
+        tmp_ds.save_as("img/" + self.file_name_field.get(), write_like_original=False)
         print("File saved.")
 
         

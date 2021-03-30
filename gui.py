@@ -9,7 +9,10 @@ from PIL import Image, ImageTk
 ITER_NUM = 180
 
 CANVAS_WIDTH = 1100
-CANVAS_HEIGHT = 540
+CANVAS_HEIGHT = 400
+
+SINOGRAM_WIDTH = 512
+SINOGRAM_HEIGHT = 256
 
 class GUI:
     def __init__(self, title, WIDTH, HEIGHT, RESIZABLE):
@@ -112,6 +115,10 @@ class GUI:
         self.canvas = tk.Canvas(self.top_menu_3, bg="black", width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
         self.canvas.pack()
         
+        # Canvas zawierajacy tylko sinogram
+        self.sinogramCanvas = tk.Canvas(self.bottom_menu, bg="black", width=SINOGRAM_WIDTH, height=SINOGRAM_HEIGHT)
+        self.sinogramCanvas.pack()
+        
         
         
         # Uruchamianie petli zdarzen
@@ -145,6 +152,7 @@ class GUI:
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
             tmp = self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value.get())
         self.redrawCanvas(tmp)
+        self.redrawSinogram(self.logic.sinograme)
         self.slider.destroy()
         self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
            from_ = 1, to = int(360/float(self.stepEntry.get())),  
@@ -166,7 +174,11 @@ class GUI:
         self.window.update_idletasks()
         self.window.update()
         tmp = self.logic.inverse_radeon_transform(iter_num)
+        tmp_rmse_result = "RMSE: " + str(round(self.logic.rmse(), 2))
+        print("TMP:", tmp_rmse_result)
+        self.rmse_text_value.set(tmp_rmse_result)
         self.redrawCanvas(tmp)
+        self.redrawSinogram(self.logic.sinograme)
         cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
         cv2.waitKey(0)
         cv2.destroyAllWindows()    
@@ -192,6 +204,17 @@ class GUI:
         self.stackedImg =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale,([img_orginal,img_result])) ))
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
         self.canvas.update()
+        self.window.update_idletasks()
+        self.window.update()
+        
+    def redrawSinogram(self, img):
+
+        #scale = self.getScaleRatio(img.shape)
+        self.sinogramImg = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_GRAY2RGB)
+        #cv2.imshow('Sinogram', self.sinogramImg)
+        self.sinogramImg =  ImageTk.PhotoImage(image=Image.fromarray(self.sinogramImg))
+        self.sinogramCanvas.create_image(0, 0, anchor=tk.NW, image=self.sinogramImg)
+        self.sinogramCanvas.update()
         self.window.update_idletasks()
         self.window.update()
 
