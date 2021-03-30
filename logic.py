@@ -165,7 +165,10 @@ class Logic:
                 else:
                     break
         self.value_array = np.array(self.value_array, dtype=np.uint8)
-        self.result_image = self.value_array #self.cut_picture()
+        if(self.original_image.shape[0] != self.original_image.shape[1]):
+            self.result_image = self.cut_picture() #self.cut_picture() self.value_array
+        else:
+            self.result_image = self.value_array
         # Dla zapisywania jako plik DICOM
         self.dicom.set_image(self.result_image)
         # if iter != self.iters:
@@ -187,7 +190,7 @@ class Logic:
         print("Shape Y/2:", self.old_image_shape[0]/2)
         print(self.value_array.shape)
         #npic = pic[100:200, 100:200]
-        npic = self.value_array[int(self.radius) - math.ceil(self.old_image_shape[1]/2): int(self.radius) + math.ceil(self.old_image_shape[1]/2), int(self.radius) - math.ceil(self.old_image_shape[0]/2): int(self.radius) + math.ceil(self.old_image_shape[0]/2)]
+        npic = self.value_array[int(self.radius) - math.ceil(self.old_image_shape[0]/2): int(self.radius) + math.ceil(self.old_image_shape[0]/2),int(self.radius) - math.ceil(self.old_image_shape[1]/2): int(self.radius) + math.ceil(self.old_image_shape[1]/2)]
         print(npic.shape)
         return npic
          
@@ -196,7 +199,8 @@ class Logic:
         self.image = cv2.imread(filename)
         self.original_image = self.image.copy()
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
-        #self.create_square_image()
+        if self.original_image.shape[0] != self.original_image.shape[1]:
+            self.create_square_image()
         self.image_copy = self.image.copy()
         self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         print("Img loaded!")
@@ -214,7 +218,7 @@ class Logic:
     def create_square_image(self):
         self.old_image_shape = copy.copy(self.image.shape)
         size = max(self.image.shape)
-        size = math.ceil(size * math.sqrt(2))
+        #size = math.ceil(size * math.sqrt(2))
         height, width, square_image = None, None, None
         if len(self.image.shape) == 3:
             height, width, _ = self.image.shape
