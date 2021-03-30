@@ -78,7 +78,7 @@ class GUI:
         self.detectors.pack(side=tk.LEFT, padx=10)
         
         self.detectorsEntry = ttk.Entry(self.top_menu_2, width = 5)
-        self.detectorsEntry.insert(0, "3")
+        self.detectorsEntry.insert(0, "180")
         self.detectorsEntry.pack(side = tk.LEFT)
         
         self.range_span = ttk.Label(self.top_menu_2, text="Rozpiętość:")
@@ -174,6 +174,7 @@ class GUI:
         self.window.update_idletasks()
         self.window.update()
         tmp = self.logic.inverse_radeon_transform(iter_num)
+        #RMSE
         tmp_rmse_result = "RMSE: " + str(round(self.logic.rmse(), 2))
         print("TMP:", tmp_rmse_result)
         self.rmse_text_value.set(tmp_rmse_result)
@@ -197,10 +198,12 @@ class GUI:
         img_result = cv2.imread("imgSaved/imgResult.jpg")
 
         img_orginal = cv2.rectangle(img_orginal, (0, 0), (img_orginal.shape[0] - 1, img_orginal.shape[1] - 1), (240, 240, 240),1)
-        img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[0]-1,img_result.shape[1]-1), (200,240,240), 1)
+        img_orginal = cv2.putText(img_orginal, 'Oryginal', (5,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,122,217), 1, cv2.LINE_AA)
 
+        img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[1]-1,img_result.shape[0]-1), (200,240,240), 1)
+        img_result = cv2.putText(img_result, 'Obraz wyjsciowy', (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 122, 217), 1, cv2.LINE_AA)
         scale = self.getScaleRatio(img_orginal.shape)
-
+        print("DASDA", img_result.shape)
         self.stackedImg =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale,([img_orginal,img_result])) ))
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
         self.canvas.update()
