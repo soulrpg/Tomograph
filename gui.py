@@ -11,8 +11,8 @@ ITER_NUM = 180
 CANVAS_WIDTH = 1100
 CANVAS_HEIGHT = 400
 
-SINOGRAM_WIDTH = 512
-SINOGRAM_HEIGHT = 256
+SINOGRAM_WIDTH = 720
+SINOGRAM_HEIGHT = 360
 
 class GUI:
     def __init__(self, title, WIDTH, HEIGHT, RESIZABLE):
@@ -152,7 +152,7 @@ class GUI:
         if type(self.logic.image) != None and len(self.stepEntry.get()) > 0 and len(self.detectorsEntry.get()) > 0 and len(self.range_spanEntry.get()) > 0 :
             tmp = self.logic.start_transform(ITER_NUM, float(self.stepEntry.get()), int(self.detectorsEntry.get()), float(self.range_spanEntry.get()), self.checkbutton_value.get())
         self.redrawCanvas(tmp)
-        self.redrawSinogram(self.logic.sinograme)
+        self.redrawSinogram(self.logic.sinogram,self.logic.sinogram_filtered)
         self.slider.destroy()
         self.slider = ttk.Scale(self.top_menu_2, variable = self.slider_value,  
            from_ = 1, to = int(360/float(self.stepEntry.get())),  
@@ -179,10 +179,10 @@ class GUI:
         print("TMP:", tmp_rmse_result)
         self.rmse_text_value.set(tmp_rmse_result)
         self.redrawCanvas(tmp)
-        self.redrawSinogram(self.logic.sinograme)
-        cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()    
+        self.redrawSinogram(self.logic.sinogram[0:iter_num][:],self.logic.sinogram_filtered[0:iter_num][:])
+        #cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
 
     def redrawCanvas(self, img):
         #dimensions = (CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -193,7 +193,7 @@ class GUI:
         #self.new_img = ImageTk.PhotoImage(image = im)
 
         cv2.imwrite("imgSaved/imgResult.jpg",self.logic.result_image)
-        #odczytuje z pliku bo cos nie dzialalo z obrazem, tak lawtiej
+        #
         img_orginal = cv2.imread("imgSaved/imgOrginal.jpg")
         img_result = cv2.imread("imgSaved/imgResult.jpg")
 
@@ -203,20 +203,33 @@ class GUI:
         img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[1]-1,img_result.shape[0]-1), (200,240,240), 1)
         img_result = cv2.putText(img_result, 'Obraz wyjsciowy', (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 122, 217), 1, cv2.LINE_AA)
         scale = self.getScaleRatio(img_orginal.shape)
-        print("DASDA", img_result.shape)
+
         self.stackedImg =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale,([img_orginal,img_result])) ))
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
         self.canvas.update()
         self.window.update_idletasks()
         self.window.update()
         
-    def redrawSinogram(self, img):
+    def redrawSinogram(self, img,img2):
 
         #scale = self.getScaleRatio(img.shape)
+
         self.sinogramImg = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_GRAY2RGB)
         #cv2.imshow('Sinogram', self.sinogramImg)
-        self.sinogramImg =  ImageTk.PhotoImage(image=Image.fromarray(self.sinogramImg))
-        self.sinogramCanvas.create_image(0, 0, anchor=tk.NW, image=self.sinogramImg)
+        self.sinogramImg = cv2.rotate(self.sinogramImg, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
+        scale = SINOGRAM_HEIGHT/(self.sinogramImg.shape[0]*2)
+
+        if img2!=[]:
+            self.sinogramFilteredImg = cv2.cvtColor(np.array(img2, dtype=np.uint8), cv2.COLOR_GRAY2RGB)
+            self.sinogramFilteredImg = cv2.rotate(self.sinogramFilteredImg, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+            self.stackedSinograme =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale, ([self.sinogramImg], [self.sinogramFilteredImg]))))
+        else:
+            self.stackedSinograme =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale, ([self.sinogramImg]))))
+
+
+        self.sinogramCanvas.create_image(0, 0, anchor=tk.NW, image=self.stackedSinograme)
         self.sinogramCanvas.update()
         self.window.update_idletasks()
         self.window.update()
