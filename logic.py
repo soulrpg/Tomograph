@@ -16,6 +16,7 @@ class Logic:
         self.brehensam_path = []
         self.sinogram_filtered = []
         self.dicom = Dicom()
+        self.sinogram_old=[]
 
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
@@ -114,6 +115,7 @@ class Logic:
 
     # Przeksztalcenie sinogramu na obrazek
     def inverse_radeon_transform(self, iter=None):
+
 
         if self.filter:
             self.sinograme=self.sinogram_filtered;
