@@ -166,6 +166,11 @@ class GUI:
         self.window.update_idletasks()
         self.window.update()
         tmp = self.logic.inverse_radeon_transform(iter_num)
+        #RMSE
+        tmp_rmse_result = "RMSE: " + str(round(self.logic.rmse(), 2))
+        print("TMP:", tmp_rmse_result)
+        self.rmse_text_value.set(tmp_rmse_result)
+
         self.redrawCanvas(tmp)
         cv2.imshow('Sinogram iter', np.array(self.logic.sinogram[0:iter_num][:], dtype=np.uint8))
         cv2.waitKey(0)
@@ -185,10 +190,12 @@ class GUI:
         img_result = cv2.imread("imgSaved/imgResult.jpg")
 
         img_orginal = cv2.rectangle(img_orginal, (0, 0), (img_orginal.shape[0] - 1, img_orginal.shape[1] - 1), (240, 240, 240),1)
-        img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[0]-1,img_result.shape[1]-1), (200,240,240), 1)
+        img_orginal = cv2.putText(img_orginal, 'Oryginal', (5,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,122,217), 1, cv2.LINE_AA)
 
+        img_result = cv2.rectangle(img_result, (0,0), (img_result.shape[1]-1,img_result.shape[0]-1), (200,240,240), 1)
+        img_result = cv2.putText(img_result, 'Obraz wyjsciowy', (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 122, 217), 1, cv2.LINE_AA)
         scale = self.getScaleRatio(img_orginal.shape)
-
+        print("DASDA", img_result.shape)
         self.stackedImg =  ImageTk.PhotoImage(image=Image.fromarray(self.stackImages(scale,([img_orginal,img_result])) ))
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.stackedImg)
         self.canvas.update()
