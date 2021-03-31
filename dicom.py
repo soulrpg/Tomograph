@@ -4,7 +4,6 @@ from pydicom.dataset import Dataset, FileDataset, FileMetaDataset
 import datetime
 from datetime import date
 import os
-import tempfile
 
 import tkinter as tk
 from tkinter import ttk
@@ -86,7 +85,8 @@ class Dicom:
         tmp_ds.PatientBirthDate = self.birth_date_field.get()
         tmp_ds.PatientComments = self.comment_entry.get("1.0", tk.END)
         tmp_ds.StudyID = ""
-        tmp_ds.SeriesInstanceUID = tmp_ds.StudyInstanceUID = pydicom.uid.generate_uid()
+        tmp_ds.SeriesInstanceUID =  pydicom.uid.generate_uid()
+        tmp_ds.StudyInstanceUID = pydicom.uid.generate_uid()
         
         tmp_ds.PixelData = self.image#.tobytes()
         
@@ -98,7 +98,6 @@ class Dicom:
         tmp_ds.PhotometricInterpretation = "MONOCHROME2"
         tmp_ds.NumberOfFrames = 1
         tmp_ds.PlanarConfiguration = 0
-        tmp_ds.BitsAllocated = 8
         tmp_ds.BitsStored = 8
         tmp_ds.HighBit = 7
 
