@@ -219,7 +219,10 @@ class GUI:
         self.sinogramImg = cv2.rotate(self.sinogramImg, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
 
 
+
         scale = SINOGRAM_HEIGHT/(self.sinogramImg.shape[0]*2)
+        if scale*self.sinogramImg.shape[1] > SINOGRAM_WIDTH:
+            scale *= SINOGRAM_WIDTH/(scale*self.sinogramImg.shape[1])
 
         if img2!=[]:
             self.sinogramFilteredImg = cv2.cvtColor(np.array(img2, dtype=np.uint8), cv2.COLOR_GRAY2RGB)
