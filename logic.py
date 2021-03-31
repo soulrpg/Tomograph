@@ -199,6 +199,11 @@ class Logic:
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
         self.image = cv2.imread(filename)
+        if self.image.shape[0]%2==1:
+            self.image=self.image[:self.image.shape[0]-1, :]
+        if self.image.shape[1]%2==1:
+            self.image=self.image[:, :self.image.shape[1]-1]
+
         self.original_image = self.image.copy()
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
         if self.original_image.shape[0] != self.original_image.shape[1]:
