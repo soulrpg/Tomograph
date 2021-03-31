@@ -16,6 +16,7 @@ class Logic:
         self.brehensam_path = []
         self.sinogram_filtered = []
         self.dicom = Dicom()
+        self.sinogram_old=[]
 
     # Metoda rozpoczynajaca obliczenia
     def start_transform(self, iters, step, detectors_num, range_span, filter=False):
@@ -115,6 +116,7 @@ class Logic:
     # Przeksztalcenie sinogramu na obrazek
     def inverse_radeon_transform(self, iter=None):
 
+
         if self.filter:
             self.sinograme=self.sinogram_filtered;
         else:
@@ -197,6 +199,11 @@ class Logic:
     # Jezeli nie mamy pliku DICOM - tylko sam obrazek
     def load_img(self, filename):
         self.image = cv2.imread(filename)
+        if self.image.shape[0]%2==1:
+            self.image=self.image[:self.image.shape[0]-1, :]
+        if self.image.shape[1]%2==1:
+            self.image=self.image[:, :self.image.shape[1]-1]
+
         self.original_image = self.image.copy()
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
         if self.original_image.shape[0] != self.original_image.shape[1]:
